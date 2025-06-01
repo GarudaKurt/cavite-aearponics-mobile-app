@@ -1,63 +1,83 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
-//import { useAuthStore } from "./store/zustand";
-const Register = () => {
-  const testInputs = /^[^<>&/=]*$/;
-  const router = useRouter();
 
-  const [name, setName] = useState("")
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../config/firebaseConfig";
+
+const Register = () => {
+  const router = useRouter();
+  const testInputs = /^[^<>&/=]*$/;
+
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("Select role"); // Role state
   const [hideShow, setHideShow] = useState(true);
-  const [wrongPass, setWrongPass] = useState(false);
   const [warnMessage, setWarnMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  //const signUp = useAuthStore((state) => state.signUp);
+  const passHideShow = () => setHideShow(!hideShow);
 
-  const securityTest = (text) => {
-    const isValid = testInputs.test(text);
-    return isValid;
-  };
+  const securityTest = (text) => testInputs.test(text);
 
-  const passHideShow = () => {
-    setHideShow(!hideShow);
+  const signUp = async (email, password, name) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+      if (userCredential)
+      {
+        console.warn("Success creating!")
+        return true
+      }
+      // const userRef = doc(db, "users", userCredential.user.uid);
+
+      // await setDoc(userRef, {
+      //   name,
+      //   email,
+      //   createdAt: new Date().toISOString(),
+      // });
+
+      // await AsyncStorage.setItem("user", JSON.stringify(userCredential.user));
+
+    } catch (error) {
+      console.error("Signup error:", error);
+      setWarnMessage(error.message);
+      Alert.alert("Registration Error", error.message);
+      return false;
+    }
   };
 
   const handleCredentials = async () => {
-    if (!name || !email || !password || role === "default") {
-      setWarnMessage(
-        "Validation Error",
-        "Please fill all fields and select a role.",
-      );
+    if (!name || !email || !password) {
+      setWarnMessage("Please fill in all fields.");
+      Alert.alert("Validation Error", "Please fill in all fields.");
       return;
     }
 
     if (!securityTest(email) || !securityTest(password)) {
-      setWarnMessage("Validation Error", "Invalid email or password format.");
+      setWarnMessage("Invalid characters used.");
+      Alert.alert("Validation Error", "Invalid characters used.");
       return;
     }
 
-    try {
-      //await signUp(email,password, name, role )
-      router.push("(tabs)");
-    } catch (error) {
-      console.error("Registration error:", error);
-      setWarnMessage(
-        "Registration Failed",
-        error.message || "Please try again.",
-      );
+    const success = await signUp(email, password, name);
+    setLoading(true)
+    if (success) {
+      console.warn("Success login!")
+      router.push("(tabs)/home");
+      setLoading(false)
     }
   };
   return (
@@ -65,7 +85,6 @@ const Register = () => {
       <View style={styles.loginscreen}>
         <Text style={styles.welcomeBack}>Register</Text>
 
-        {wrongPass && <Text style={styles.errorText}>{warnMessage}</Text>}
 
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -121,13 +140,21 @@ const Register = () => {
           </View>
         </KeyboardAvoidingView>
 
-        <View style={styles.signUpContainer}>
-          <Text style={styles.forgotPassword}>Already have an account?</Text>
-          <Link href="/" asChild>
-            <Text style={styles.resetTypo}>LogIn</Text>
-          </Link>
+        <View style={styles.signInWrapper}>
+          <View style={styles.buttonContainer}>
+            <Pressable style={styles.buttons} onPress={handleCredentials} disabled={loading}>
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#fff" />
+                  <Text style={styles.buttonTitle}>  Create Account</Text>
+                </View>
+              ) : (
+                <Text style={styles.buttonTitle}>Create Account</Text>
+              )}
+            </Pressable>
+          </View>
+          </View>
         </View>
-      </View>
     </View>
   );
 };
@@ -240,6 +267,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: "Gudea-Bold",
     fontWeight: "700",
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 });
 

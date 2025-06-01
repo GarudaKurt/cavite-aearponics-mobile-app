@@ -1,18 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Link, useRouter } from "expo-router";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-//import { useAuthStore } from "./store/zustand"; // import the Zustand store
+import { auth } from "../config/firebaseConfig";
 
 const Home = () => {
   const testInputs = /^[^<>&/=]*$/;
@@ -21,38 +23,39 @@ const Home = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [hideShow, setHideShow] = useState(true);
-  const [wrongPass, setWrongPass] = useState(false);
   const [warnMessage, setWarnMessage] = useState("");
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
 
-  //const signIn = useAuthStore((state) => state.signIn);
+  const securityTest = (text) => testInputs.test(text);
 
-  const securityTest = (text) => {
-    const isValid = testInputs.test(text);
-    return isValid;
-  };
+  const passHideShow = () => setHideShow(!hideShow);
 
-  const passHideShow = () => {
-    setHideShow(!hideShow);
+  const signIn = async (email, password) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await AsyncStorage.setItem("user", JSON.stringify(userCredential.user));
+      return true;
+    } catch (error) {
+      console.error("Error during signin:", error.message);
+      return false;
+    }
   };
 
   const handleCredentials = async () => {
-    try {
-      //Validate both email and password
-      if (!securityTest(email) || !securityTest(password)) {
-        setWarnMessage("Invalid email or password format");
-        return;
-      }
-        setLoading(true);
-        //const success = await signIn(email, password)
-        let success = true
-        if(success)
-          router.push("(tabs)/home");
-        else
-          setWarnMessage("Invalid email or password");
-    } catch (error) {
-      console.error("Error logging in:", error);
-      setLoading(false);
+    if (!securityTest(email) || !securityTest(password)) {
+      setWarnMessage("Invalid email or password format");
+      return;
+    }
+
+    setLoading(true);
+    const success = await signIn(email, password);
+    setLoading(false);
+
+    if (success) {
+      setWarnMessage("Success login");
+      router.push("(tabs)/home");
+    } else {
+      setWarnMessage("Invalid email or password");
     }
   };
 
@@ -61,7 +64,7 @@ const Home = () => {
       <View style={styles.loginscreen}>
         <Text style={styles.welcomeBack}>Welcome</Text>
 
-        {wrongPass && <Text style={styles.errorText}>{warnMessage}</Text>}
+        {warnMessage ? <Text style={styles.errorText}>{warnMessage}</Text> : null}
 
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -75,6 +78,8 @@ const Home = () => {
               placeholderTextColor="#92a0a9"
               value={email}
               onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
             />
             <View style={styles.inputContainer}>
               <TextInput
@@ -85,21 +90,15 @@ const Home = () => {
                 value={password}
                 onChangeText={setPassword}
               />
-              <TouchableOpacity
-                onPress={passHideShow}
-                style={styles.iconContainer}
-              >
-                <Ionicons
-                  name={hideShow ? "eye-off" : "eye"}
-                  size={24}
-                  color="grey"
-                />
+              <TouchableOpacity onPress={passHideShow} style={styles.iconContainer}>
+                <Ionicons name={hideShow ? "eye-off" : "eye"} size={24} color="grey" />
               </TouchableOpacity>
             </View>
           </View>
+
           <View style={styles.signInWrapper}>
             <View style={styles.buttonContainer}>
-            <Pressable style={styles.buttons} onPress={handleCredentials} disabled={loading}>
+              <Pressable style={styles.buttons} onPress={handleCredentials} disabled={loading}>
                 {loading ? (
                   <View style={styles.loadingContainer}>
                     <ActivityIndicator size="small" color="#fff" />
@@ -125,13 +124,8 @@ const Home = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardAvoidingView: {
-    width: "100%",
-    alignItems: "center",
-  },
+  container: { flex: 1 },
+  keyboardAvoidingView: { width: "100%", alignItems: "center" },
   inputShadowBox: {
     fontSize: 15,
     backgroundColor: "#f3f3f3",
@@ -149,16 +143,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: "Gudea-Bold",
     fontWeight: "700",
-  },
-  svgrepocomIconLayout: {
-    height: 40,
-    width: 40,
-    overflow: "hidden",
-  },
-  designer11: {
-    marginTop: 100,
-    width: 200,
-    height: 230,
   },
   welcomeBack: {
     fontSize: 45,
@@ -194,14 +178,6 @@ const styles = StyleSheet.create({
     color: "#92a0a9",
     fontWeight: "700",
   },
-  reset: {
-    marginLeft: 5,
-  },
-  forgotPasswordParent: {
-    height: 30,
-    marginTop: 16,
-    flexDirection: "row",
-  },
   inputForm: {
     height: 115,
     marginTop: 16,
@@ -214,10 +190,6 @@ const styles = StyleSheet.create({
     marginTop: 60,
     flexDirection: "row",
     columnGap: 8,
-  },
-  orParent: {
-    marginTop: 16,
-    alignItems: "center",
   },
   loginscreen: {
     backgroundColor: "#fff",
