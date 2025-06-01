@@ -71,9 +71,8 @@ const Register = () => {
       Alert.alert("Validation Error", "Invalid characters used.");
       return;
     }
-
-    const success = await signUp(email, password, name);
     setLoading(true)
+    const success = await signUp(email, password, name);
     if (success) {
       console.warn("Success login!")
       router.push("(tabs)/home");
