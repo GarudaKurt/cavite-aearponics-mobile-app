@@ -1,38 +1,38 @@
 
 import { Ionicons } from "@expo/vector-icons";
-//import { onValue, ref, set } from "firebase/database";
-import { useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-//import { database } from "../store/firebaseConfig";
 import { useRouter } from "expo-router";
+import { onValue, ref, set } from "firebase/database";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { database } from "../../config/firebaseConfig";
+
+
 const  Home = () => {
   const [count, setCount] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("")
+  const [temperature, setTemperature] = useState("")
+  const [humidity, setHumidity] = useState("")
+  const [pHLevel, setPhLevel] = useState("")
   const [loading, setLoading] = useState(true);
   const [isOn, setIsOn] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
  
   const router = useRouter()
-    /*
+  
   useEffect(() => {
     const dataRef = ref(database, "monitoring");
 
     // Fetch data
     const unsubscribe = onValue(dataRef, async (snapshot) => {
       const fetchedData = snapshot.val();
-      const now = new Date();
-
-      // Format date: YYYY-MM-DD
-      const date = now.toISOString().split('T')[0];
-
-      // Format time: HH:MM:SS
-      const time = now.toTimeString().split(' ')[0];
 
       if (fetchedData) {
-        setCount(fetchedData.Count?.value ?? fetchedData.Count ?? "N/A");
-        setDate(date);
-        setTime(time);
+        setTemperature(fetchedData.temperature)
+        setHumidity(fetchedData.humidity)
+        setPhLevel(fetchedData.phlevel)
+        setDate(fetchedData.date);
+        setTime(fetchedData.time);
 
       }
       setLoading(false);
@@ -40,7 +40,7 @@ const  Home = () => {
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [count, time, date]); // Adding these dependencies ensures that the effect runs when any of them change
+  }, [temperature, humidity, pHLevel, time, date]); 
 
   if (loading) {
     return (
@@ -48,12 +48,12 @@ const  Home = () => {
         <Text>Loading...</Text>
       </View>
     );
-  }*/
+  }
 
   const toggleSwitch = () => {
     setIsOn((prev) => {
       const newState = !prev;
-     /*
+     
       // Update the value in Firebase Realtime Database
       const stateRef = ref(database, "monitoring/state");
       set(stateRef, newState)
@@ -65,7 +65,6 @@ const  Home = () => {
         duration: 200,
         useNativeDriver: false,
       }).start();
-        */
       return newState;
     });
   };
@@ -78,7 +77,6 @@ const  Home = () => {
   return (
     <View style={styles.container}>
       <View style={styles.cardContainer}>
-        {/* Gas Level Info */}
         <View style={styles.gasLevelRow}>
           <Text style={styles.labelText}>Aearoponics</Text>
           <View style={styles.indicator}>
@@ -86,14 +84,20 @@ const  Home = () => {
           </View>
         </View>
 
-        {/* Date and Time */}
         <View style={styles.dateTimeRow}>
-          <Text style={styles.dateText}>Humidity: {count}</Text>
-          <Text style={styles.dateText}>Temperature: {count}</Text>
-          <Text style={styles.dateText}>pHLevel: {count}</Text>
+          <Text style={styles.dateText}>
+            Humidity: {humidity} <Ionicons name="water" size={16} color="#4A4A4A" />
+          </Text>
+          <Text style={styles.dateText}>
+            Temperature: {temperature} <Ionicons name="thermometer" size={16} color="#4A4A4A" />
+          </Text>
+          <Text style={styles.dateText}>
+            pHLevel: {pHLevel} <Ionicons name="flask" size={16} color="#4A4A4A" />
+          </Text>
           <Text style={styles.timeText}>Date: {date}</Text>
           <Text style={styles.timeText}>Time: {time}</Text>
         </View>
+
 
         <View style={styles.switchContainer}>
           <Text style={styles.statusLabel}>{isOn ? "ON" : "OFF"}</Text>

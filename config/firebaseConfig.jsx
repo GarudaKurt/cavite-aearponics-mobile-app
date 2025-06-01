@@ -5,6 +5,7 @@ import {
   getReactNativePersistence,
   initializeAuth
 } from "firebase/auth";
+import { getDatabase } from "firebase/database";
 import { getFirestore } from "firebase/firestore";
 
 // Firebase config
@@ -18,7 +19,6 @@ const firebaseConfig = {
   appId: "1:644840671203:web:c53dcecef7fa4d9e1682d6",
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 // Initialize auth with React Native persistence (only once)
@@ -28,12 +28,12 @@ try {
     persistence: getReactNativePersistence(AsyncStorage)
   });
 } catch (e) {
-  // If already initialized (e.g., during hot reload)
   auth = getAuth(app);
 }
 
 // Firestore
 const db = getFirestore(app);
+const database = getDatabase(app);
 
-export { auth, db };
+export { auth, database, db };
 

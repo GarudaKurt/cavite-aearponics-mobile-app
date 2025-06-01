@@ -49,11 +49,12 @@ const Home = () => {
 
     setLoading(true);
     const success = await signIn(email, password);
-    setLoading(false);
 
     if (success) {
       setWarnMessage("Success login");
       router.push("(tabs)/home");
+      setLoading(false);
+
     } else {
       setWarnMessage("Invalid email or password");
     }
